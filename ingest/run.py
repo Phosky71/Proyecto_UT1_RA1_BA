@@ -1,6 +1,8 @@
 """
 Pipeline finanzas: presupuesto vs gasto (ETL ligero)
+
 Bronce → Plata → Oro → Quarantine → Reporte
+
 Estructura real del proyecto
 """
 
@@ -8,10 +10,10 @@ import hashlib
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+
 DATA = ROOT / "data" / "drops"
 STORAGE = ROOT / "data" / "storage"
 BRONZE = STORAGE / "bronze"
@@ -24,45 +26,43 @@ SQL = ROOT / "sql"
 for folder in [BRONZE, SILVER, GOLD, QUARANTINE, OUT]:
     folder.mkdir(parents=True, exist_ok=True)
 
-# ========== 1) INGESTA: BRONZE ==========
+# ========== INGESTA 1) LECTURA DESDE CSV ==========
 print("=" * 70)
 print("RETO 1: INGESTIÓN - BRONZE (RAW)")
 print("=" * 70)
-
-
-def compute_batch_id(file_path):
-    stat = file_path.stat()
-    content = f"{file_path.name}_{stat.st_size}_{stat.st_mtime}"
-    return hashlib.md5(content.encode()).hexdigest()[:16]
-
-
-files_gastos = sorted(DATA.glob("gastos.parquet"))
-files_presup = sorted(DATA.glob("presupuesto.parquet"))
+presupuesto_csv = DATA / "presupuesto.csv"
+gastos_csv = DATA / "gastos.csv"
 raw_gastos, raw_presup = [], []
 utcnow = datetime.now(timezone.utc).isoformat()
 
-for f in files_gastos:
-    df = pd.read_parquet(f)
-    df["_source_file"] = f.name
-    df["_ingest_ts"] = utcnow
-    df["_batch_id"] = compute_batch_id(f)
-    raw_gastos.append(df)
-    print(f"✓ Ingesta: {f.name} → batch_id={df['_batch_id'].iloc[0]}")
+def compute_batch_id(name, df_len):
+    # Usar nombre y tamaño
+    content = f"{name}_{df_len}_{utcnow}"
+    return hashlib.md5(content.encode()).hexdigest()[:16]
 
-for f in files_presup:
-    df = pd.read_parquet(f)
-    df["_source_file"] = f.name
+if gastos_csv.exists():
+    df = pd.read_csv(gastos_csv, encoding="utf-8")
+    df["_source_file"] = gastos_csv.name
     df["_ingest_ts"] = utcnow
-    df["_batch_id"] = compute_batch_id(f)
+    df["_batch_id"] = compute_batch_id(gastos_csv.name, len(df))
+    raw_gastos.append(df)
+    print(f"✓ Ingesta: {gastos_csv.name} → batch_id={df['_batch_id'].iloc[0]}")
+
+if presupuesto_csv.exists():
+    df = pd.read_csv(presupuesto_csv, encoding="utf-8")
+    df["_source_file"] = presupuesto_csv.name
+    df["_ingest_ts"] = utcnow
+    df["_batch_id"] = compute_batch_id(presupuesto_csv.name, len(df))
     raw_presup.append(df)
-    print(f"✓ Ingesta: {f.name} → batch_id={df['_batch_id'].iloc[0]}")
+    print(f"✓ Ingesta: {presupuesto_csv.name} → batch_id={df['_batch_id'].iloc[0]}")
 
 gastos_raw = pd.concat(raw_gastos, ignore_index=True) if raw_gastos else pd.DataFrame()
 presup_raw = pd.concat(raw_presup, ignore_index=True) if raw_presup else pd.DataFrame()
 
-# Guardar en BRONZE
+# Guardar en BRONZE (solo Parquet)
 gastos_raw.to_parquet(BRONZE / "gastos_raw.parquet", index=False)
 presup_raw.to_parquet(BRONZE / "presupuesto_raw.parquet", index=False)
+
 print(f"\n✓ Bronze guardado: {BRONZE}")
 print(f" - gastos_raw.parquet: {len(gastos_raw)} filas")
 print(f" - presupuesto_raw.parquet: {len(presup_raw)} filas")
@@ -83,22 +83,22 @@ AREAS_MAP = {
     "operaciones": "Operaciones"
 }
 
-
 def normalize_area(area):
-    if pd.isna(area): return None
+    if pd.isna(area):
+        return None
     clean = str(area).strip().lower()
     return AREAS_MAP.get(clean, str(area).strip().title())
-
 
 presup_df = presup_raw.copy()
 presup_df["area_normalizada"] = presup_df["area"].apply(normalize_area)
 presup_df["presupuesto"] = pd.to_numeric(presup_df["presupuesto"], errors="coerce")
 presup_valid = (
-        presup_df["area_normalizada"].notna() &
-        presup_df["partida"].notna() &
-        presup_df["presupuesto"].notna() &
-        (presup_df["presupuesto"] >= 0)
+    presup_df["area_normalizada"].notna() &
+    presup_df["partida"].notna() &
+    presup_df["presupuesto"].notna() &
+    (presup_df["presupuesto"] >= 0)
 )
+
 presup_quar = presup_df.loc[~presup_valid].copy()
 presup_clean = presup_df.loc[presup_valid].copy()
 if not presup_clean.empty:
@@ -115,6 +115,7 @@ gastos_df.loc[gastos_df["fecha"].isna(), "_quarantine_cause"] = "fecha_invalida"
 gastos_df.loc[gastos_df["importe"].isna() | (gastos_df["importe"] < 0), "_quarantine_cause"] = "importe_invalido"
 if valid_partidas:
     gastos_df.loc[~gastos_df["partida"].isin(valid_partidas), "_quarantine_cause"] = "partida_no_en_presupuesto"
+
 gastos_quar = gastos_df[gastos_df["_quarantine_cause"].notna()].copy()
 gastos_clean = gastos_df[gastos_df["_quarantine_cause"].isna()].copy()
 if not gastos_clean.empty:
@@ -149,6 +150,7 @@ if not gastos_clean.empty and not presup_clean.empty:
     kpi_df["porcentaje_ejecucion"] = (kpi_df["kpi_ejecucion"] * 100).round(2)
     kpi_df["presupuesto_restante"] = (kpi_df["presupuesto"] - kpi_df["gasto_acumulado"]).round(2)
     kpi_df.to_parquet(GOLD / "kpi_ejecucion.parquet", index=False)
+
     area_agg = kpi_df.groupby("area", as_index=False).agg({
         "presupuesto": "sum",
         "gasto_acumulado": "sum",
@@ -173,7 +175,7 @@ conn.commit()
 conn.close()
 print(f"✓ SQLite guardado: {sqlite_path}")
 
-# ========== 5) REPORTE MARKDOWN (igual que estaba, solo Parquet en lectura) ==========
+# ========== 5) REPORTE MARKDOWN ==========
 print("\n" + "=" * 70)
 print("RETO 4: REPORTE MARKDOWN")
 print("=" * 70)
@@ -205,6 +207,7 @@ else:
     total_presup = total_gasto = total_restante = ejecucion_global = 0
     top_partidas = riesgo = mensual_pivot = kpi_rep = area_rep = pd.DataFrame()
     periodo = "N/A"
+
 ultima_actualizacion = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 reporte = f"""# Ejecución Presupuestaria vs Gasto — Periodo {periodo}
@@ -215,12 +218,13 @@ reporte = f"""# Ejecución Presupuestaria vs Gasto — Periodo {periodo}
 
 ## 📊 Resumen Ejecutivo
 
-| Métrica | Valor |
-|---------|-------|
-| **Presupuesto Total** | {total_presup:,.2f} € |
-| **Gasto Acumulado** | {total_gasto:,.2f} € |
+| Métrica                | Valor           |
+|------------------------|-----------------|
+| **Presupuesto Total**  | {total_presup:,.2f} € |
+| **Gasto Acumulado**    | {total_gasto:,.2f} € |
 | **Presupuesto Restante** | {total_restante:,.2f} € |
-| **% Ejecución Global** | {ejecucion_global:.2f}% |
+| **% Ejecución Global** | {ejecucion_global:.2f}%    |
+
 ---
 
 ## 📖 Definiciones de KPIs
@@ -289,9 +293,11 @@ reporte = f"""# Ejecución Presupuestaria vs Gasto — Periodo {periodo}
 - **Periodo cubierto**: {periodo}
 - **Última actualización**: {ultima_actualizacion}
 
----"""
+---
+"""
 
 REPORTE_FILE = OUT / "reporte.md"
 REPORTE_FILE.write_text(reporte, encoding="utf-8")
+
 print(f"\n✓ Reporte generado: {REPORTE_FILE}")
 print(f" {len(reporte)} caracteres")

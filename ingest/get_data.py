@@ -1,10 +1,10 @@
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+
 DROPS = ROOT / "data" / "drops"
 DROPS.mkdir(parents=True, exist_ok=True)
 
@@ -12,19 +12,27 @@ DROPS.mkdir(parents=True, exist_ok=True)
 AREAS = ["RRHH", "IT", "Marketing", "Ventas", "Operaciones"]
 PARTIDAS = ["Personal", "Material", "Software", "Hardware", "Formacion", "Viajes", "Publicidad"]
 
-# 1. Generar presupuesto.parquet
+# 1. Generar presupuesto.csv
 presup_data = []
+
 for area in AREAS:
     for partida in PARTIDAS:
         presup = random.randint(20000, 150000)
-        presup_data.append({"area": area, "partida": partida, "presupuesto": presup})
-df_presup = pd.DataFrame(presup_data)
-df_presup.to_parquet(DROPS / "presupuesto.parquet", index=False)
-print(f"✓ {DROPS / 'presupuesto.parquet'} ({len(df_presup)} filas)")
+        presup_data.append({
+            "area": area,
+            "partida": partida,
+            "presupuesto": presup
+        })
 
-# 2. Generar gastos.parquet
+df_presup = pd.DataFrame(presup_data)
+df_presup.to_csv(DROPS / "presupuesto.csv", index=False, encoding="utf-8")
+print(f"✓ {DROPS / 'presupuesto.csv'} ({len(df_presup)} filas)")
+
+
+# 2. Generar gastos.csv
 gastos_data = []
 start = datetime(2025, 1, 1)
+
 for i in range(300):
     fecha = start + timedelta(days=random.randint(0, 300))
     area = random.choice(AREAS)
@@ -51,5 +59,5 @@ gastos_data.append({"fecha": "2025-06-15", "area": "IT", "partida": "Software", 
 gastos_data.append({"fecha": "2025-06-15", "area": "IT", "partida": "Software", "importe": 3500.00})
 
 df_gastos = pd.DataFrame(gastos_data)
-df_gastos.to_parquet(DROPS / "gastos.parquet", index=False)
-print(f"✓ {DROPS / 'gastos.parquet'} ({len(df_gastos)} filas)")
+df_gastos.to_csv(DROPS / "gastos.csv", index=False, encoding="utf-8")
+print(f"✓ {DROPS / 'gastos.csv'} ({len(df_gastos)} filas)")
