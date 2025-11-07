@@ -1,0 +1,4 @@
+fecha,area,partida,importe,_source_file,_ingest_ts,_batch_id,area_normalizada,_quarantine_cause
+2025-04-20,IT,PartidaNoExiste,2000.0,gastos.csv,2025-11-07T00:22:35.528357+00:00,550a3c28bc4e9650,IT,partida_no_en_presupuesto
+2025-05-10,Marketing,Publicidad,-500.0,gastos.csv,2025-11-07T00:22:35.528357+00:00,550a3c28bc4e9650,Marketing,importe_invalido
+,Ventas,Viajes,800.0,gastos.csv,2025-11-07T00:22:35.528357+00:00,550a3c28bc4e9650,Ventas,fecha_invalida
