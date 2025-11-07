@@ -1,25 +1,4 @@
-# Dependencias del Proyecto ETL Finanzas
-# Dev: Antonio Juan
-
-# DECISIÓN: Versiones específicas para reproducibilidad
-# JUSTIFICACIÓN: Evita "funciona en mi máquina" - todos usan mismas versiones
-
-# ==============================================================================
-# pandas: Manipulación de datos tabulares
-# JUSTIFICACIÓN: Estándar de facto para ETL en Python
-# ==============================================================================
 pandas==2.1.4
-
-# ==============================================================================
-# pyarrow: Soporte para formato Parquet
-# JUSTIFICACIÓN: Parquet es formato columnar eficiente para data lakes
-# ==============================================================================
 pyarrow==14.0.1
-
-# ==============================================================================
-# python-dateutil: Parsing robusto de fechas
-# JUSTIFICACIÓN: Maneja múltiples formatos de fecha automáticamente
-# ==============================================================================
 python-dateutil==2.8.2
 
-# NOTA: SQLite viene incluido en Python standard library (no requiere instalación)

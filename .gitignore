@@ -1,0 +1,7 @@
+.venv
+notebooks
+__pycache__/
+environment.yml
+identifier.sqlite
+docs
+tools
