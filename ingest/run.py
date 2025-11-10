@@ -3,13 +3,13 @@ Pipeline finanzas: presupuesto vs gasto (ETL ligero)
 
 Bronce → Plata → Oro → Quarantine → Reporte
 
-Estructura real del proyecto
 """
 
 import hashlib
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,10 +35,12 @@ gastos_csv = DATA / "gastos.csv"
 raw_gastos, raw_presup = [], []
 utcnow = datetime.now(timezone.utc).isoformat()
 
+
 def compute_batch_id(name, df_len):
     # Usar nombre y tamaño
     content = f"{name}_{df_len}_{utcnow}"
     return hashlib.md5(content.encode()).hexdigest()[:16]
+
 
 if gastos_csv.exists():
     df = pd.read_csv(gastos_csv, encoding="utf-8")
@@ -83,20 +85,22 @@ AREAS_MAP = {
     "operaciones": "Operaciones"
 }
 
+
 def normalize_area(area):
     if pd.isna(area):
         return None
     clean = str(area).strip().lower()
     return AREAS_MAP.get(clean, str(area).strip().title())
 
+
 presup_df = presup_raw.copy()
 presup_df["area_normalizada"] = presup_df["area"].apply(normalize_area)
 presup_df["presupuesto"] = pd.to_numeric(presup_df["presupuesto"], errors="coerce")
 presup_valid = (
-    presup_df["area_normalizada"].notna() &
-    presup_df["partida"].notna() &
-    presup_df["presupuesto"].notna() &
-    (presup_df["presupuesto"] >= 0)
+        presup_df["area_normalizada"].notna() &
+        presup_df["partida"].notna() &
+        presup_df["presupuesto"].notna() &
+        (presup_df["presupuesto"] >= 0)
 )
 
 presup_quar = presup_df.loc[~presup_valid].copy()
