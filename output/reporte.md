@@ -143,9 +143,13 @@
 
 ---
 
-## 📌 Contexto del Informe
+[//]: # ()
+[//]: # (## 📌 Contexto del Informe)
 
-- **Periodo cubierto**: 2025-01-01 a 2025-10-27
-- **Última actualización**: 2025-11-07 17:47:03 UTC
+[//]: # ()
+[//]: # (- **Periodo cubierto**: 2025-01-01 a 2025-10-27)
 
----
+[//]: # (- **Última actualización**: 2025-11-10 16:30:39 UTC)
+
+[//]: # ()
+[//]: # (---)

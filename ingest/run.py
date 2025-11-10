@@ -173,11 +173,20 @@ print("=" * 70)
 
 sqlite_path = OUT / "finanzas.db"
 conn = sqlite3.connect(sqlite_path)
-kpi_df.to_sql("kpi_ejecucion", conn, if_exists="replace", index=False)
-area_agg.to_sql("ejecucion_por_area", conn, if_exists="replace", index=False)
+
+# Agregar datos a la tabla `kpi_ejecucion`
+if not kpi_df.empty:
+    kpi_df["_batch_id"] = compute_batch_id("kpi_ejecucion", len(kpi_df))
+    kpi_df.to_sql("kpi_ejecucion", conn, if_exists="append", index=False)
+
+# Agregar datos a la tabla `ejecucion_por_area`
+if not area_agg.empty:
+    area_agg["_batch_id"] = compute_batch_id("ejecucion_por_area", len(area_agg))
+    area_agg.to_sql("ejecucion_por_area", conn, if_exists="append", index=False)
+
 conn.commit()
 conn.close()
-print(f"✓ SQLite guardado: {sqlite_path}")
+print(f"✓ SQLite actualizado: {sqlite_path}")
 
 # ========== 5) REPORTE MARKDOWN ==========
 print("\n" + "=" * 70)
