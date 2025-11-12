@@ -26,17 +26,44 @@ Node.js 22+ y npm ≥10.9.2 para publicación en Quartz/Pages (no implementado a
 
 ## Instalación y Configuración
 
-Instala dependencias ejecutando: pip install pandas pyarrow
+### 1. Clonar el repositorio
 
+```bash
+git clone https://github.com/Phosky71/Proyecto_UT1_RA1_BA.git
+cd Proyecto_UT1_RA1_BA
+```
 
-Clona el repositorio base Proyecto_UT1_RA1_BA si no lo tienes.
+### 2. Instalar dependencias
 
-Coloca este código en la carpeta `ingest/` y el generador en la raíz.
+Tienes dos opciones para instalar las dependencias:
 
-Asegúrate de que las carpetas `data/drops/`, `data/storage/`, `data/quarantine/` y `output/` existan (se crean automáticamente al ejecutar).
+#### Opción A: Usando pip (recomendado)
 
-No se requiere configuración adicional; las rutas son relativas.
+```bash
+pip install -r requirements.txt
+```
 
+#### Opción B: Usando conda
+
+Si prefieres usar conda, puedes crear un entorno virtual:
+
+```bash
+conda create -n etl_finanzas python=3.11
+conda activate etl_finanzas
+pip install -r requirements.txt
+```
+
+### 3. Verificar la estructura de carpetas
+
+El script creará automáticamente las carpetas necesarias (`data/drops/`, `data/storage/`, `data/quarantine/`, `output/`) al ejecutarse, pero puedes crearlas manualmente si lo prefieres:
+
+```bash
+mkdir -p data/drops data/storage/bronze data/storage/silver data/storage/gold data/quarantine output
+```
+
+### 4. ¡Listo!
+
+No se requiere configuración adicional. Las rutas son relativas y el proyecto está listo para ejecutarse.
 ## Estructura del Repositorio
 
 La estructura sigue el modelo de capas de datos (bronze para raw, silver para clean, gold para analytics) con trazabilidad e idempotencia.
