@@ -10,7 +10,7 @@ Este repositorio implementa un pipeline **ETL** ligero para el análisis de ejec
 
 - `pandas` para manipulación de datos.
 - `sqlite3` (incluido en Python) para base de datos.
-- `pyarrow` opcional para Parquet (usado **CSV** en esta versión).
+- `pyarrow` opcional para Parquet
 
 ## Editor Recomendado
 
@@ -35,21 +35,7 @@ cd Proyecto_UT1_RA1_BA
 
 ### 2. Instalar dependencias
 
-Tienes dos opciones para instalar las dependencias:
-
-#### Opción A: Usando pip (recomendado)
-
 ```bash
-pip install -r requirements.txt
-```
-
-#### Opción B: Usando conda
-
-Si prefieres usar conda, puedes crear un entorno virtual:
-
-```bash
-conda create -n etl_finanzas python=3.11
-conda activate etl_finanzas
 pip install -r requirements.txt
 ```
 
